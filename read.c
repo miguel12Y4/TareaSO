@@ -1,7 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <string.h>
 #include <sys/stat.h>
+
+
+#include <sys/wait.h>
+
+#include <sys/types.h>
+#include <unistd.h>
 
 #include <stdint.h>
 #include <regex.h>
@@ -10,19 +17,61 @@ char* leer();
 int match(char * text, char * exp );
 int match(char * text, char * exp );
 int matchA(char * text, char * exp );
-void procesoImg(char * text);
-void procesoScript(char * text);
-void procesoA(char * text);
+int procesoImg(char * text);
+int procesoScript(char * text);
+int procesoA(char * text);
 
 int main(void){
 
     char * text = leer(&text);
+    
+    int img = 0;
 
-    procesoImg(text);
+    //tuberia para el procesoImg
+    int fd[2];
+    pipe(fd);
+
+    //tuberia para el procesoScript
+
+    //tuberia para el proceso A
+
+
+    int status;
+
+    int f = fork();
+    if(f==0){
+
+        close(fd[0]);
+        int n = procesoImg(text);
+        write(fd[1], &n, sizeof(int));
+        
+    }else{
+        int s = fork();
+        if(s==0){
+            int n = procesoScript(text);
+            //codigo de la etiqueta script
+
+        }else{
+            int g = fork();
+            if(g==0){
+                int n = procesoA(text);
+                //codigo de la etiqueta a
+
+            }else{
+                pid_t w = waitpid(f, &status, WUNTRACED);
+
+                close(fd[1]);
+                read(fd[0],&img,sizeof(int));
+
+                printf("las coincidencias son %d\n", img);
+            }
+        }
+
+    }
 
 }
 
-void procesoImg(char * text){
+int procesoImg(char * text){
 
     char * exp = "<img\\s+((\\s*[^\"<>]+)\\s*=\\s*(\"[^\"<>]*\"\\s*))*\\s*>";
 
@@ -30,9 +79,10 @@ void procesoImg(char * text){
 
     printf("las coincidencias son %d\n", numero);
 
+    return numero;
 }
 
-void procesoScript(char * text){
+int procesoScript(char * text){
 
     char * exp = "falta expresion regular";
 
@@ -40,7 +90,7 @@ void procesoScript(char * text){
 
 }
 
-void procesoA(char * text){
+int procesoA(char * text){
     char * exp = "falta expresion regular";
     
     match(text, exp);
