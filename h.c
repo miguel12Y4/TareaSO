@@ -16,4 +16,6 @@ void main (void)
     clock_gettime(CLOCK_REALTIME, &end);
 
     int fin = (int)(begin.tv_nsec / 1.0e6);
+
+    int seconds = fin - inicio;
 }

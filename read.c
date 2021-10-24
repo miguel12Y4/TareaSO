@@ -12,7 +12,7 @@
 #include <stdint.h>
 #include <regex.h>
 
-#include <sys/time.h>
+#include <time.h>
 
 
 char* leer();
@@ -66,10 +66,10 @@ int main(void){
     if(f==0){
         //proceso hijo
 
-        //definir variable para calcular el tiempo
-        struct timeval begin, end;
-        //calcular tiempo de inicio
-        gettimeofday(&begin, 0);
+        struct timespec begin, end;
+        clock_gettime(CLOCK_REALTIME, &begin);
+
+        int inicio = (int)(begin.tv_nsec);
 
         //llamar a la funcion encargada de contar la cantidad de tag IMG
         int contImg = procesoImg(text);
@@ -78,12 +78,13 @@ int main(void){
                 {
                 }
 
-        //calcular tiempo de fin
-        gettimeofday(&end, 0);
+        clock_gettime(CLOCK_REALTIME, &end);
 
-        //calcular tiempo (está en microsegundos, se debe transformar a milisegundos)
-        printf("1..... %d  - %d \n", end.tv_usec, begin.tv_usec);
-        int seconds = (int)(end.tv_usec - begin.tv_usec)/1000;
+        int fin = (int)(end.tv_nsec);
+
+        printf("1... %d - %d\n", inicio, fin);
+
+        int seconds = fin - inicio;
 
 
         //usar pipe para escribir resultados y luego pasarlo al proceso padre
@@ -101,9 +102,10 @@ int main(void){
         if(s==0){
 
             //definir variable para calcular el tiempo
-            struct timeval begin, end;
-            //calcular tiempo de inicio
-            gettimeofday(&begin, 0);
+            struct timespec begin, end;
+            clock_gettime(CLOCK_REALTIME, &begin);
+
+            int inicio = (int)(begin.tv_nsec);
 
             //llamar a la funcion encargada de contar la cantidad de tag SCRIPT
             int contScript = procesoScript(text);
@@ -113,11 +115,13 @@ int main(void){
                 }
 
             //calcular tiempo de fin
-            gettimeofday(&end, 0);
+            clock_gettime(CLOCK_REALTIME, &end);
 
-            //calcular tiempo (está en microsegundos, se debe transformar a milisegundos)
-            printf("2..... %d  - %d", end.tv_usec, begin.tv_usec);
-            int seconds = (int) (end.tv_usec - begin.tv_usec)/1000;
+            int fin = (int)(end.tv_nsec);
+
+            printf("2... %d - %d\n", inicio, fin);
+
+            int seconds = fin - inicio;
 
 
             //usar pipe para escribir resultados y luego pasarlo al proceso padre
@@ -135,9 +139,10 @@ int main(void){
             if(g==0){
 
                 //definir variable para calcular el tiempo
-                struct timeval begin, end;
-                //calcular tiempo de inicio
-                gettimeofday(&begin, 0);
+                struct timespec begin, end;
+                clock_gettime(CLOCK_REALTIME, &begin);
+
+                int inicio = (int)(begin.tv_nsec);
 
                 //llamar a la funcion encargada de contar la cantidad de tag A
                 int contA = procesoA(text);
@@ -147,13 +152,12 @@ int main(void){
                 }
                 
                 //calcular tiempo de fin
-                gettimeofday(&end, 0);
+                clock_gettime(CLOCK_REALTIME, &end);
 
-                
+                int fin = (int)(end.tv_nsec);
+                printf("3... %d - %d\n", inicio, fin);
 
-                //calcular tiempo (está en microsegundos, se debe transformar a milisegundos)
-                printf("%d  - %d", end.tv_usec, begin.tv_usec);
-                int seconds = (int) (end.tv_usec - begin.tv_usec)/1000;
+                int seconds = fin - inicio;
 
 
                 //usar pipe para escribir resultados y luego pasarlo al proceso padre
