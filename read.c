@@ -99,6 +99,7 @@ int main(void){
     }else{
         int s = fork();
         if(s==0){
+            //proceso hijo
 
             //definir variable para calcular el tiempo
             struct timeval begin, end;
@@ -133,6 +134,7 @@ int main(void){
         }else{
             int g = fork();
             if(g==0){
+                //proceso hijo
 
                 //definir variable para calcular el tiempo
                 struct timeval begin, end;
@@ -261,7 +263,7 @@ int procesoA(char * text){
     
 
     //realizar funcionalidad del proceso
-    int cantidad = match(text, exp);
+    int cantidad = matchA(text, exp);
     
     
 
@@ -298,8 +300,6 @@ char* leer() {
 
 #define ARRAY_SIZE(arr) (sizeof((arr)) / sizeof((arr)[0]))
 
-static const char *const str = "<img height=\"\" alt=\"1MDN\" srcset=\"mdn-logo-HD.png 2x\"><img src=\"\" alt=\"2MDN\" srcset=\"mdn-logo-HD.png 2x\"><img src=\"\" alt=\"3MDN\" srcset=\"mdn-logo-HD.png 2x\"><img src=\"\" data-deferred=\"1\" class=\"rg_i Q4LuWd\" jsname=\"Q4LuWd\" width=\"169\" height=\"200\" alt=\"Holanda - Wikipedia, la enciclopedia libre\" data-iml=\"1468.5\" data-atf=\"true\"><img src=\"dsgfdhgf\" alt=\"DA - Home | Facebook\" jsname=\"HiaYvf\" jsaction=\"load:XAeZkd;\" class=\"n3VNCb\" data-noaft=\"1\" style=\"width: 385px; height: 385.664px; margin: 0px;\">";
-static const char *const re = "<img\\s+((\\s*[^\"<>]+)\\s*=\\s*(\"[^\"<>]*\"\\s*))*\\s*>";
 
 int match(char * text, char * exp){
 
@@ -349,13 +349,16 @@ int matchA(char * text, char * exp){
     //busco los match
     const char *s = text;
 
-    regex_t regex;
+    regex_t regex, regexhref;
     regmatch_t pmatch[1];
     regoff_t off, len;
 
     if (regcomp(&regex, exp, REG_EXTENDED))
         return -1;
 
+    char * exphref = "href\\s+=\\s+\".[^\"]\"";
+    if (regcomp(&regexhref, exphref, REG_EXTENDED))
+        return -1;
 
     int i;
     for (i = 0;; i++)
@@ -366,7 +369,13 @@ int matchA(char * text, char * exp){
         off = pmatch[0].rm_so + (s - text);
         len = pmatch[0].rm_eo - pmatch[0].rm_so;
 
-        //encontrar subcadena para obtener los links
+        //encontrar la subcadena de la etiqueta A
+
+        
+        if (regexec(&regexhref, s, ARRAY_SIZE(pmatch), pmatch, 0))
+            break;
+        
+        //encontrar subcadenas para obtener los links
         
         fprintf(input_file, "%.*s\n", len, s + pmatch[0].rm_so);
 
