@@ -14,6 +14,11 @@
 
 #include <sys/time.h>
 
+//en la especificacion de la tarea aparece que se debe tomar en cuenta 
+//la etiqueta a como <a></a> pero en la imagne subrrayada aparece <a ...>
+//nosotros consideramos ambas posibilidades
+
+
 
 //declaración de cabezera de funciones
 //leer archivos
@@ -71,7 +76,7 @@ int main(void){
 
     int f = fork();
     if(f==0){
-        //proceso hijo
+        //proceso hijo encargado de buscar una etiqueta IMG
 
         //definir variable para calcular el tiempo
         struct timeval begin, end;
@@ -89,7 +94,6 @@ int main(void){
         gettimeofday(&end, 0);
 
         //calcular tiempo (está en microsegundos, se debe transformar a milisegundos)
-        printf("1..... %d  - %d \n", end.tv_usec, begin.tv_usec);
         int seconds = (int)(end.tv_usec - begin.tv_usec)/1000;
 
 
@@ -106,7 +110,7 @@ int main(void){
     }else{
         int s = fork();
         if(s==0){
-            //proceso hijo
+            //proceso hijo encargado de encontrar una etiqueta Script
 
             //definir variable para calcular el tiempo
             struct timeval begin, end;
@@ -124,7 +128,6 @@ int main(void){
             gettimeofday(&end, 0);
 
             //calcular tiempo (está en microsegundos, se debe transformar a milisegundos)
-            printf("2..... %d  - %d", end.tv_usec, begin.tv_usec);
             int seconds = (int) (end.tv_usec - begin.tv_usec)/1000;
 
 
@@ -141,7 +144,7 @@ int main(void){
         }else{
             int g = fork();
             if(g==0){
-                //proceso hijo
+                //proceso hijo encargado de encontrar etiquetas a
 
                 //definir variable para calcular el tiempo
                 struct timeval begin, end;
@@ -161,7 +164,6 @@ int main(void){
                 
 
                 //calcular tiempo (está en microsegundos, se debe transformar a milisegundos)
-                printf("%d  - %d", end.tv_usec, begin.tv_usec);
                 int seconds = (int) (end.tv_usec - begin.tv_usec)/1000;
 
 
@@ -221,15 +223,15 @@ int main(void){
 
 
                 //mostrar los resultados
-                printf("Estadisticas: \n");
-                printf("las coincidencias de IMG son %d\n", img);
-                printf("las coincidencias de Script son %d\n", script);
-                printf("las coincidencias de A son %d\n\n\n", a);
+                printf("**** ESTADÍSTICAS DEL SITIO WEB ANALIZADO ****\n");
+                printf("ENLACES ENCONTRADOS: %d\n", a);
+                printf("IMÁGENES ENCONTRADAS: %d\n", img);
+                printf("SCRIPT ANCLADOS AL SITIO: %d\n\n\n", script);
 
-                printf("Estadisticas del tiempo de ejecucion: \n");
-                printf("los tiempos de IMG son %d\n", timeImg);
-                printf("los tiempos de Script son %d\n", timeScript);
-                printf("los tiempos de A son %d\n", timeA);
+                printf("**** ESTADÍSTICAS DE EJECUCIÓN ***\n");
+                printf("Hijo analizador de links PID: %d, demoró: %d Milisegundos\n", y ,timeA);
+                printf("Hijo analizador de imágenes PID: %d, demoró: %d Milisegundos\n", w, timeImg);
+                printf("Hijo analizador de scripts PID: %d, demoró: %d Milisegundos\n", x, timeScript);
             }
         }
 
@@ -252,7 +254,7 @@ int procesoImg(char * text){
 int procesoScript(char * text){
 
     //expresion regulat para obtener todas las etiquetas Script
-    char * exp = "<img\\s+((\\s*[^\"<>]+)\\s*=\\s*(\"[^\"<>]*\"\\s*))*\\s*>";
+    char * exp = "<script\\s*((\\s+[^\"<>]+)\\s*=\\s*(\"[^\"<>]*\"\\s*))*\\s*>[^<>]*<\\s*/\\s*script\\s*>";
 
 
     //Buscar la cantidad de etiquetas
@@ -265,7 +267,7 @@ int procesoScript(char * text){
 int procesoA(char * text){
 
     //expresion regulat para obtener todas las etiquetas A
-    char * exp = "<img\\s+((\\s*[^\"<>]+)\\s*=\\s*(\"[^\"<>]*\"\\s*))*\\s*>";
+    char * exp = "<a\\s*((\\s+[^\"<>]+)\\s*=\\s*(\"[^\"<>]*\"\\s*))*\\s*>([^<>]*<\\s*/\\s*a\\s*>)?";
 
     
 
@@ -309,47 +311,54 @@ char* leer() {
 }
 
 
-
 #define ARRAY_SIZE(arr) (sizeof((arr)) / sizeof((arr)[0]))
 
 
 int match(char * text, char * exp){
 
     const char *s = text;
-    //printf("la expresion es %s\n", s);
+
+    //variables para buscar coincidencias con una expresion regular dada
     regex_t regex;
+    //datos de la posicion de las coincidencias
     regmatch_t pmatch[1];
     regoff_t off, len;
 
+    //compilar expresion regular
     if (regcomp(&regex, exp, REG_EXTENDED))
         return -1;
 
-    //printf("Coincidenci1as:\n");
-
+    //comenzar a buscar coincidencias con una expresion regular
     int i;
     for (i = 0;; i++)
     {
+        //buscar coincidencia
         if (regexec(&regex, s, ARRAY_SIZE(pmatch), pmatch, 0))
             break;
 
-        off = pmatch[0].rm_so + (s - text);
+        //detalles de la posicion de la coincidencia
+        off = pmatch[0].rm_so;
         len = pmatch[0].rm_eo - pmatch[0].rm_so;
-        //printf("subcadena = \"%.*s\"\n", len, s + pmatch[0].rm_so);
-        //printf("\n\n");
+
+        //contendrá la subcadena que haya hecho match con la expresion regular
+        char tag [len];
+        strncpy(tag,  s+off, len);
+    
 
         s += pmatch[0].rm_eo;
     }
+    //retorna la cantidad de coincidencias
     return i;
 }
 
-//buscar comando grep 
+
 int matchA(char * text, char * exp){
     
     //abrir archivo en el cual se insertarán los links
     const char* filename = "links.txt";
     FILE* input_file = fopen(filename, "w");
 
-    //verificar que se halla habrido de arhivo .txt
+    //verificar que se halla abierto de arhivo .txt
     if (!input_file)
         return -1;
 
@@ -362,48 +371,79 @@ int matchA(char * text, char * exp){
     //texto que se quiere analizar
     const char *s = text;
 
-    //variables para que se compilen las cadenas que se quieren analizar
-    regex_t regex, regexhref;
-    //contendrá la cadena que vaya haciendo match con la expresion regular dada
-    regmatch_t pmatch[1];
+    //variables para que se compilen las expresiones regulares que se quieren analizar
+    regex_t regex, regexhref, regexlink;
+
+    //contendrá los datos de la  subcadena que vaya haciendo match con la expresion regular dada
+    regmatch_t pmatch[1], hrefmatch[1], linkmatch[1];
 
     //dirección y tamaño de la subcadena que hizo match con respecto al texto analizado
     regoff_t off, len;
 
-    //compilar expresion regular para encontrar
+    //compilar expresion regular para encontrar la etiqueta a
     if (regcomp(&regex, exp, REG_EXTENDED))
         return -1;
 
-    char * exphref = "href\\s+=\\s+\".[^\"]\"";
     
-    //compilar expresion regular
+    //compilar expresion regular que se encargará que encontrar los href="link" de las etiquetas a
+    char * exphref = "href\\s*=\\s*\".[^\"]*\"";
     if (regcomp(&regexhref, exphref, REG_EXTENDED))
         return -1;
 
+    //compilar expresion regular que se encargará que encontrar los "link" de los href="link" de las etiquetas a
+    char * explink = "\".[^\"]*\"";
+    if(regcomp(&regexlink, explink, REG_EXTENDED))
+        return -1;
+
+    //comenzar a analizar la cadena
     int i;
     for (i = 0;; i++)
     {
-        //buscar una coincidencia con el texto
+        //buscar una etiqueta a en el texto
         if (regexec(&regex, s, ARRAY_SIZE(pmatch), pmatch, 0))
             break;
 
-        //asignar valores de la coincidencia
-        off = pmatch[0].rm_so + (s - text);
+        //asignar valores de las posiciones de la coincidencia del tag a
+        off = pmatch[0].rm_so;
         len = pmatch[0].rm_eo - pmatch[0].rm_so;
 
-        //encontrar la subcadena de la etiqueta A
+        //contendrá un string con la cadena encontrada <a ...>
+        char tag [len];
+        strncpy(tag,  s+off, len);
+    
 
-        
+        //en la cadena encontrada (guardada en tag), se buscará el href="link", con una expresion regular
+        if (!regexec(&regexhref, tag, ARRAY_SIZE(hrefmatch), hrefmatch, 0)){
+            //posicion de la coincidencia
+            int hoff = hrefmatch[0].rm_so;
+            int hlen = hrefmatch[0].rm_eo - hrefmatch[0].rm_so;
 
-        if (regexec(&regexhref, s, ARRAY_SIZE(pmatch), pmatch, 0))
-            break;
+            //contendrá un string con la cadena encontrada href="link"
+            char datahref [hlen];
+            strncpy(datahref,  tag+hoff, hlen);
+
+            //en la cadena encontrada href="link", se buscará lo que hay en "link"
+            if (!regexec(&regexlink, datahref, ARRAY_SIZE(linkmatch), linkmatch, 0)){
+                //posicion de la coincidencia
+                int loff = linkmatch[0].rm_so;
+                int llen = linkmatch[0].rm_eo - linkmatch[0].rm_so;
+                
+                //contendrá la cadena "link"
+                char link [hlen];
+                strncpy(link,  datahref + loff, llen);
+
+                //escribir en el archivo, pero sin las ""
+                fprintf(input_file,"%.*s\n", llen-2, link+1);
+            }
+        }
         
-        //encontrar subcadenas para obtener los links
-        
-        fprintf(input_file, "%.*s\n", len, s + pmatch[0].rm_so);
 
         s += pmatch[0].rm_eo;
     }
+
+    //se cierra el archivo de texto
     fclose(input_file);
+
+    //se retorna la cantidad de coincidencias
     return i;
 }
