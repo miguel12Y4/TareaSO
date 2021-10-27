@@ -86,9 +86,7 @@ int main(void){
         //llamar a la funcion encargada de contar la cantidad de tag IMG
         int contImg = procesoImg(text);
 
-        for (int i = 0; i < 100000000; i++)
-                {
-                }
+        
 
         //calcular tiempo de fin
         gettimeofday(&end, 0);
@@ -120,9 +118,7 @@ int main(void){
             //llamar a la funcion encargada de contar la cantidad de tag SCRIPT
             int contScript = procesoScript(text);
             
-            for (int i = 0; i < 100000000; i++)
-                {
-                }
+            
 
             //calcular tiempo de fin
             gettimeofday(&end, 0);
@@ -154,9 +150,7 @@ int main(void){
                 //llamar a la funcion encargada de contar la cantidad de tag A
                 int contA = procesoA(text);
 
-                for (int i = 0; i < 100000000; i++)
-                {
-                }
+                
                 
                 //calcular tiempo de fin
                 gettimeofday(&end, 0);
