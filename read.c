@@ -15,10 +15,17 @@
 #include <sys/time.h>
 
 
+//declaración de cabezera de funciones
+//leer archivos
 char* leer();
+
+//encontrar cantidad de coincidencias dada una expresion regular (IMG o A)
 int match(char * text, char * exp );
-int match(char * text, char * exp );
+
+//encontrar expresion regular
 int matchA(char * text, char * exp );
+
+//procesos de buscar cada etiqueta
 int procesoImg(char * text);
 int procesoScript(char * text);
 int procesoA(char * text);
@@ -34,15 +41,15 @@ int main(void){
     int img;
     int a;
 
-    //pipe para la cantidad de tags del procesoImg
+    //pipe para compartir la cantidad de tags del procesoImg con el padre
     int fdImg[2];
     pipe(fdImg);
 
-    //pipe para la cantidad de tags del procesoScript
+    //pipe para compartir la cantidad de tags del procesoScript con el padre
     int fdScript[2];
     pipe(fdScript);
 
-    //pipe para la cantidad de tags del procesoA
+    //pipe para compartir la cantidad de tags del procesoA con el padre
     int fdA[2];
     pipe(fdA);
 
@@ -86,12 +93,12 @@ int main(void){
         int seconds = (int)(end.tv_usec - begin.tv_usec)/1000;
 
 
-        //usar pipe para escribir resultados y luego pasarlo al proceso padre
+        //usar pipe para escribir resultados del tiempo tarnscurrido y luego pasarlo al proceso padre
         close(fdImgT[0]);
         write(fdImgT[1], &seconds, sizeof(int));
         close(fdImgT[1]);
 
-        //usar pipe para escribir resultados y luego pasarlo al proceso padre
+        //usar pipe para escribir resultados de la cantidad de tag IMG y luego pasarlo al proceso padre
         close(fdImg[0]);
         write(fdImg[1], &contImg, sizeof(int));
         close(fdImg[1]);
@@ -235,29 +242,29 @@ int procesoImg(char * text){
     char * exp = "<img\\s+((\\s*[^\"<>]+)\\s*=\\s*(\"[^\"<>]*\"\\s*))*\\s*>";
 
 
-    
+    //buscar la cantidad de etiquetas
     int cantidad = match(text, exp);
     
-
+    //retornar la cantidad previamente calculada
     return cantidad;
 }
 
 int procesoScript(char * text){
 
-    //encontrar expresion regular
+    //expresion regulat para obtener todas las etiquetas Script
     char * exp = "<img\\s+((\\s*[^\"<>]+)\\s*=\\s*(\"[^\"<>]*\"\\s*))*\\s*>";
 
 
-    //realizar funcionalidad del proceso
+    //Buscar la cantidad de etiquetas
     int cantidad = match(text, exp);
     
-    
+    //retornar la cantidad
     return cantidad;
 }
 
 int procesoA(char * text){
 
-    //encontrar expresion regular
+    //expresion regulat para obtener todas las etiquetas A
     char * exp = "<img\\s+((\\s*[^\"<>]+)\\s*=\\s*(\"[^\"<>]*\"\\s*))*\\s*>";
 
     
@@ -266,12 +273,14 @@ int procesoA(char * text){
     int cantidad = matchA(text, exp);
     
     
-
+    //retornar cantidad de etiquetas encontradas
     return cantidad;
 }  
 
+//leer un archivo de texto y retornar su contenido en un arreglo de char
 char* leer() {
     
+    //leer archivo .txt
     const char* filename = "input.html";
 
     FILE* input_file = fopen(filename, "r");
@@ -284,15 +293,18 @@ char* leer() {
         return "";
     }
 
+    //reservo espacio para guardar el contenido del txt
     char* file_contents = (char *)malloc(sb.st_size);
 
-    
+    //leo el contenido desde el archivo a file_contents
     fread(file_contents, sb.st_size, 1, input_file);
 
     //printf("el texto s %s\n", file_contents);
 
+    //cierro el archuvo
     fclose(input_file);
 
+    //retorno el contenido
     return file_contents;
 }
 
@@ -337,6 +349,7 @@ int matchA(char * text, char * exp){
     const char* filename = "links.txt";
     FILE* input_file = fopen(filename, "w");
 
+    //verificar que se halla habrido de arhivo .txt
     if (!input_file)
         return -1;
 
@@ -346,32 +359,42 @@ int matchA(char * text, char * exp){
         return -1;
     }
     
-    //busco los match
+    //texto que se quiere analizar
     const char *s = text;
 
+    //variables para que se compilen las cadenas que se quieren analizar
     regex_t regex, regexhref;
+    //contendrá la cadena que vaya haciendo match con la expresion regular dada
     regmatch_t pmatch[1];
+
+    //dirección y tamaño de la subcadena que hizo match con respecto al texto analizado
     regoff_t off, len;
 
+    //compilar expresion regular para encontrar
     if (regcomp(&regex, exp, REG_EXTENDED))
         return -1;
 
     char * exphref = "href\\s+=\\s+\".[^\"]\"";
+    
+    //compilar expresion regular
     if (regcomp(&regexhref, exphref, REG_EXTENDED))
         return -1;
 
     int i;
     for (i = 0;; i++)
     {
+        //buscar una coincidencia con el texto
         if (regexec(&regex, s, ARRAY_SIZE(pmatch), pmatch, 0))
             break;
 
+        //asignar valores de la coincidencia
         off = pmatch[0].rm_so + (s - text);
         len = pmatch[0].rm_eo - pmatch[0].rm_so;
 
         //encontrar la subcadena de la etiqueta A
 
         
+
         if (regexec(&regexhref, s, ARRAY_SIZE(pmatch), pmatch, 0))
             break;
         
